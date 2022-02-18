@@ -5,14 +5,14 @@ extern crate serde_derive;
 // use std::collections::HashSet;
 use std::collections::HashMap;
 use std::env;
-use std::error::Error;
+use std::io;
 use std::mem;
 use std::process;
 
 type KeywordSupport = HashMap<String, Vec<u32>>;
 type PatternSupport = HashMap<Vec<u32>, Vec<u32>>;
 
-fn read_k1_support(filename: &str) -> Result<KeywordSupport, Box<dyn Error>> {
+fn read_k1_support(filename: &str, min_support: usize) -> Result<KeywordSupport, io::Error> {
     #[derive(Deserialize)]
     struct Record {
         text_keywords: String,
@@ -28,12 +28,16 @@ fn read_k1_support(filename: &str) -> Result<KeywordSupport, Box<dyn Error>> {
         }
         i += 1;
     }
+    // clear items below threshold support
+    base.retain(|_, v| v.len() >= min_support);
     Ok(base)
 }
 
+// fn read_k_support(k1_support: &KeywordSupport)
+
 // holds all the logic for the Apriori algorithm
-fn find_frequent_itemsets(filename: &str, threshold: u32, output: &str) {
-    let mut base_set = match read_k1_support(filename) {
+fn find_frequent_itemsets(filename: &str, threshold: usize, output: &str) {
+    let base_set = match read_k1_support(filename, threshold) {
         Ok(set) => set,
         Err(err) => {
             println!("Error reading base itemset from '{}': {}", filename, err);
@@ -58,5 +62,5 @@ fn main() {
     let output = &args[3];
     // println!("All above {}: '{}' -> '{}' ", threshold, filename, output);
 
-    find_frequent_itemsets(filename, threshold, output);
+    find_frequent_itemsets(filename, threshold as usize, output);
 }
