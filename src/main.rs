@@ -59,7 +59,7 @@ fn read_k_support(
 }
 
 /// holds all the logic for the Apriori algorithm
-fn find_frequent_itemsets(filename: &str, threshold: usize, output: &str) {
+fn find_frequent_itemsets(filename: &str, threshold: usize, _output: &str) {
     let (keywords, k1_support) = match read::read_keyword_support(filename, threshold) {
         Ok(set) => parse_keyword_support(set),
         Err(err) => {
@@ -68,8 +68,16 @@ fn find_frequent_itemsets(filename: &str, threshold: usize, output: &str) {
         }
     };
     println!("{:5} passing 1-itemsets found", keywords.len());
-    let k2_support = read_k_support(&keywords, &k1_support, &k1_support, threshold);
-    println!("{:5} passing 2-itemsets found", k2_support.len());
+    let mut k_support: PatternSupport = k1_support.clone();
+    let mut k = 2;
+    while k_support.len() > 0 {
+        k_support = read_k_support(&keywords, &k1_support, &k_support, threshold);
+        println!("{:5} passing {}-itemsets found", k_support.len(), k,);
+        // println!("\tEx: {:?}", k_support.get(&vec![0, 1]).unwrap());
+        k += 1;
+    }
+    // let k2_support = read_k_support(&keywords, &k1_support, &k1_support, threshold);
+    // println!("{:5} passing 2-itemsets found", k2_support.len());
 }
 
 fn main() {
