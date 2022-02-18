@@ -3,10 +3,10 @@ extern crate csv;
 extern crate serde_derive;
 
 // use std::collections::HashSet;
+use array_tool::vec::Intersect;
 use std::collections::HashMap;
 use std::env;
 use std::io;
-use std::mem;
 use std::process;
 
 type Keywords = Vec<String>;
@@ -64,10 +64,20 @@ fn read_k_support(
             // we have a new pattern to build off of! From last elem value in
             // this one up to keyword_list.len(), check to see what the intersection
             // of support is (using k1_support) and, if above min, add new pattern to k_support!
-            println!("{}->{}", prev_pat.last().unwrap(), keyword_list.len());
-            // iterate from
+            // println!("{} -> {}", prev_pat.last().unwrap(), keyword_list.len());
+            let last = *prev_pat.last().unwrap();
+            for i in last + 1..keyword_list.len() as u32 {
+                let mut new_pat = prev_pat.clone();
+                new_pat.push(i);
+                let i_support = k1_support.get(&vec![i]).unwrap().clone(); // probably slow
+                let new_sup = prev_sup.intersect(i_support); // TODO: rewrite intersect to take advantage of sortedness
+                if new_sup.len() >= min_support {
+                    println!("{} -> {} :: {}", last, keyword_list.len(), i);
+                    k_support.insert(new_pat, new_sup);
+                }
+            }
         });
-    k_support.retain(|_, v| v.len() >= min_support);
+    // k_support.retain(|_, v| v.len() >= min_support);
     k_support
 }
 
