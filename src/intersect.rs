@@ -1,4 +1,5 @@
 pub trait IntersectSorted<T> {
+    /// Intersect two sorted sequences
     fn intersect(&mut self, other: &Self);
 }
 
