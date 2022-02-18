@@ -30,7 +30,7 @@ fn parse_keyword_support(base: read::KeywordSupport) -> (Keywords, PatternSuppor
 /// From given k-1 pattern support map (and a few constant variables), generate k pattern support
 fn read_k_support(
     keyword_list: &Keywords,
-    k1_support: &PatternSupport,
+    k1_support: &PatternSupport, // TODO: remove from here once entry fails to contribute to any k pattern
     prev_patterns_support: &PatternSupport,
     min_support: usize,
 ) -> PatternSupport {
@@ -68,7 +68,7 @@ fn find_frequent_itemsets(filename: &str, threshold: usize, _output: &str) {
         }
     };
     println!("{:5} passing 1-itemsets found", keywords.len());
-    let mut k_support: PatternSupport = k1_support.clone();
+    let mut k_support: PatternSupport = k1_support.clone(); // TODO: find a better way to do this
     let mut k = 2;
     while k_support.len() > 0 {
         k_support = read_k_support(&keywords, &k1_support, &k_support, threshold);
