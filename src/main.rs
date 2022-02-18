@@ -34,7 +34,7 @@ fn read_k_support(
     prev_patterns_support: &PatternSupport,
     min_support: usize,
 ) -> PatternSupport {
-    let mut k_support = PatternSupport::new();
+    let mut k_support = PatternSupport::new(); // TODO: spend some time trying to predict size
     prev_patterns_support
         .iter()
         .for_each(|(prev_pat, prev_sup)| {
@@ -50,7 +50,7 @@ fn read_k_support(
                 let mut new_sup = prev_sup.clone(); // probably slow
                 new_sup.intersect(&i_support); // custom sorted intersection
                 if new_sup.len() >= min_support {
-                    println!("{} -> {} :: {}", last, keyword_list.len(), i);
+                    // println!("{} -> {} :: {}", last, keyword_list.len(), i);
                     k_support.insert(new_pat, new_sup);
                 }
             }
