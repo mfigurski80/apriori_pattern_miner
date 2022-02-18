@@ -50,23 +50,39 @@ fn read_keyword_support(
     Ok((keywords, pattern))
 }
 
-// fn read_k_support(
-//     k1_support: &KeywordSupport,
-//     prev_patterns_support: &PatternSupport,
-// ) -> PatternSupport {
-//     let mut k_support = PatternSupport::new();
-// }
+/// From given k-1 pattern support map (and a few global variables), generate k pattern support
+fn read_k_support(
+    keyword_list: &Keywords,
+    k1_support: &PatternSupport,
+    prev_patterns_support: &PatternSupport,
+    min_support: usize,
+) -> PatternSupport {
+    let mut k_support = PatternSupport::new();
+    prev_patterns_support
+        .iter()
+        .for_each(|(prev_pat, prev_sup)| {
+            // we have a new pattern to build off of! From last elem value in
+            // this one up to keyword_list.len(), check to see what the intersection
+            // of support is (using k1_support) and, if above min, add new pattern to k_support!
+            println!("{}->{}", prev_pat.last().unwrap(), keyword_list.len());
+            // iterate from
+        });
+    k_support.retain(|_, v| v.len() >= min_support);
+    k_support
+}
 
 // holds all the logic for the Apriori algorithm
 fn find_frequent_itemsets(filename: &str, threshold: usize, output: &str) {
-    let (patterns, k1_support) = match read_keyword_support(filename, threshold) {
+    let (keywords, k1_support) = match read_keyword_support(filename, threshold) {
         Ok(set) => set,
         Err(err) => {
             println!("Error reading base itemset from '{}': {}", filename, err);
             process::exit(1);
         }
     };
-    println!("{:5} unique itemsets read", patterns.len());
+    println!("{:5} passing 1-itemsets found", keywords.len());
+    let k2_support = read_k_support(&keywords, &k1_support, &k1_support, threshold);
+    println!("{:5} passing 2-itemsets found", k2_support.len());
 }
 
 fn main() {
