@@ -1,12 +1,14 @@
-extern crate csv;
 #[macro_use]
 extern crate serde_derive;
 
+mod intersect;
+mod read;
+
 // use std::collections::HashSet;
-use array_tool::vec::Intersect;
+// use array_tool::vec::Intersect;
+use intersect::IntersectSorted;
 use std::collections::HashMap;
 use std::env;
-use std::io;
 use std::process;
 
 type Keywords = Vec<String>;
@@ -14,30 +16,7 @@ type Keywords = Vec<String>;
 type PatternSupport = HashMap<Vec<u32>, Vec<u32>>;
 
 /// Creates Keywords list and k=1 Pattern Support map from file given
-fn read_keyword_support(
-    filename: &str,
-    min_support: usize,
-) -> Result<(Keywords, PatternSupport), io::Error> {
-    #[derive(Deserialize)]
-    struct Record {
-        text_keywords: String,
-    }
-    type KeywordSupport = HashMap<String, Vec<u32>>;
-
-    let mut rdr = csv::Reader::from_path(filename)?;
-    let mut base = KeywordSupport::new();
-    let mut i: u32 = 0;
-    for result in rdr.deserialize() {
-        let record: Record = result?;
-        for keyword in record.text_keywords.split(';') {
-            // insert keyword into base
-            base.entry(keyword.to_string()).or_insert(vec![]).push(i);
-        }
-        i += 1;
-    }
-    // clear items below threshold support
-    base.retain(|_, v| v.len() >= min_support);
-
+fn parse_keyword_support(base: read::KeywordSupport) -> (Keywords, PatternSupport) {
     // divide keyword support struct into keywords and pattern support
     let mut keywords = Keywords::new();
     let mut pattern = PatternSupport::new();
@@ -47,7 +26,7 @@ fn read_keyword_support(
         keywords.push(key.clone());
         pattern.insert(vec![new_id as u32], sup.to_vec());
     }
-    Ok((keywords, pattern))
+    (keywords, pattern)
 }
 
 /// From given k-1 pattern support map (and a few global variables), generate k pattern support
@@ -69,8 +48,9 @@ fn read_k_support(
             for i in last + 1..keyword_list.len() as u32 {
                 let mut new_pat = prev_pat.clone();
                 new_pat.push(i);
-                let i_support = k1_support.get(&vec![i]).unwrap().clone(); // probably slow
-                let new_sup = prev_sup.intersect(i_support); // TODO: rewrite intersect to take advantage of sortedness
+                let i_support = k1_support.get(&vec![i]).unwrap(); // probably slow
+                let mut new_sup = prev_sup.clone();
+                new_sup.intersect(&i_support); // TODO: rewrite intersect to take advantage of sortedness
                 if new_sup.len() >= min_support {
                     println!("{} -> {} :: {}", last, keyword_list.len(), i);
                     k_support.insert(new_pat, new_sup);
@@ -83,8 +63,8 @@ fn read_k_support(
 
 // holds all the logic for the Apriori algorithm
 fn find_frequent_itemsets(filename: &str, threshold: usize, output: &str) {
-    let (keywords, k1_support) = match read_keyword_support(filename, threshold) {
-        Ok(set) => set,
+    let (keywords, k1_support) = match read::read_keyword_support(filename, threshold) {
+        Ok(set) => parse_keyword_support(set),
         Err(err) => {
             println!("Error reading base itemset from '{}': {}", filename, err);
             process::exit(1);
