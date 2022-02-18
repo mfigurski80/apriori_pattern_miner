@@ -9,14 +9,21 @@ use std::io;
 use std::mem;
 use std::process;
 
-type KeywordSupport = HashMap<String, Vec<u32>>;
+type Keywords = Vec<String>;
+/// Maps specific pattern to the column ids that support it
 type PatternSupport = HashMap<Vec<u32>, Vec<u32>>;
 
-fn read_k1_support(filename: &str, min_support: usize) -> Result<KeywordSupport, io::Error> {
+/// Creates Keywords list and k=1 Pattern Support map from file given
+fn read_keyword_support(
+    filename: &str,
+    min_support: usize,
+) -> Result<(Keywords, PatternSupport), io::Error> {
     #[derive(Deserialize)]
     struct Record {
         text_keywords: String,
     }
+    type KeywordSupport = HashMap<String, Vec<u32>>;
+
     let mut rdr = csv::Reader::from_path(filename)?;
     let mut base = KeywordSupport::new();
     let mut i: u32 = 0;
@@ -30,21 +37,36 @@ fn read_k1_support(filename: &str, min_support: usize) -> Result<KeywordSupport,
     }
     // clear items below threshold support
     base.retain(|_, v| v.len() >= min_support);
-    Ok(base)
+
+    // divide keyword support struct into keywords and pattern support
+    let mut keywords = Keywords::new();
+    let mut pattern = PatternSupport::new();
+
+    for (key, sup) in base.iter() {
+        let new_id = keywords.len();
+        keywords.push(key.clone());
+        pattern.insert(vec![new_id as u32], sup.to_vec());
+    }
+    Ok((keywords, pattern))
 }
 
-// fn read_k_support(k1_support: &KeywordSupport)
+// fn read_k_support(
+//     k1_support: &KeywordSupport,
+//     prev_patterns_support: &PatternSupport,
+// ) -> PatternSupport {
+//     let mut k_support = PatternSupport::new();
+// }
 
 // holds all the logic for the Apriori algorithm
 fn find_frequent_itemsets(filename: &str, threshold: usize, output: &str) {
-    let base_set = match read_k1_support(filename, threshold) {
+    let (patterns, k1_support) = match read_keyword_support(filename, threshold) {
         Ok(set) => set,
         Err(err) => {
             println!("Error reading base itemset from '{}': {}", filename, err);
             process::exit(1);
         }
     };
-    println!("{:5} unique itemsets read", base_set.len());
+    println!("{:5} unique itemsets read", patterns.len());
 }
 
 fn main() {
