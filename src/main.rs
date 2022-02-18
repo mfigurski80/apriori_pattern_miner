@@ -6,106 +6,41 @@ extern crate serde_derive;
 use std::collections::HashMap;
 use std::env;
 use std::error::Error;
+use std::mem;
 use std::process;
 
-type SupportSet = HashMap<Vec<String>, u32>;
+type KeywordSupport = HashMap<String, Vec<u32>>;
+type PatternSupport = HashMap<Vec<u32>, Vec<u32>>;
 
-fn read_itemsets(filename: &str) -> Result<SupportSet, Box<dyn Error>> {
+fn read_k1_support(filename: &str) -> Result<KeywordSupport, Box<dyn Error>> {
     #[derive(Deserialize)]
     struct Record {
         text_keywords: String,
     }
     let mut rdr = csv::Reader::from_path(filename)?;
-    let mut itemsets = SupportSet::new();
+    let mut base = KeywordSupport::new();
+    let mut i: u32 = 0;
     for result in rdr.deserialize() {
         let record: Record = result?;
-        let mut keywords: Vec<String> = record
-            .text_keywords
-            .split(';')
-            .map(|s| s.to_string())
-            .collect();
-        keywords.sort();
-        // let key = keywords.clone();
-        let count = itemsets.entry(keywords).or_insert(0);
-        *count += 1;
-    }
-    Ok(itemsets)
-}
-
-fn filter_itemsets(itemsets: &mut SupportSet, min_support: u32) {
-    itemsets.retain(|_, count| *count >= min_support);
-}
-
-fn build_1_itemsets(itemsets: &SupportSet, min_support: u32) -> SupportSet {
-    let mut one_itemsets = SupportSet::new();
-    for (keywords, count) in itemsets {
-        for keyword in keywords {
-            let keyword_vec = vec![keyword.clone()];
-            let word_count = one_itemsets.entry(keyword_vec).or_insert(0);
-            *word_count += count;
+        for keyword in record.text_keywords.split(';') {
+            // insert keyword into base
+            base.entry(keyword.to_string()).or_insert(vec![]).push(i);
         }
+        i += 1;
     }
-    filter_itemsets(&mut one_itemsets, min_support);
-    one_itemsets
-}
-
-fn build_k_itemset(
-    prev_itemsets: &SupportSet,
-    one_itemsets: &SupportSet,
-    original_itemsets: &mut SupportSet,
-    min_support: u32,
-) -> SupportSet {
-    let mut k_itemsets = SupportSet::new();
-    for (prev, prev_count) in prev_itemsets {
-        println!("prev: {:?}", prev);
-        for (keyword, word_count) in one_itemsets {
-            if prev.contains(&keyword[0]) {
-                // skip if keyword is already in prev
-                continue;
-            }
-            // generate new potential itemset
-            let mut new_set = prev.clone();
-            new_set.push(keyword[0].clone());
-            new_set.sort();
-            if k_itemsets.contains_key(&new_set) {
-                // skip if already checked this combination
-                continue;
-            }
-            for (original, original_count) in &mut *original_itemsets {
-                // check if new_set is a subset of original
-                let mut original_iter = original.iter();
-                if new_set.iter().all(|x| original_iter.any(|o| x == o)) {
-                    // if so, add to k_itemsets
-                    let count = k_itemsets.entry(new_set.clone()).or_insert(0);
-                    *count += *original_count;
-                }
-            }
-        }
-    }
-    filter_itemsets(&mut k_itemsets, min_support);
-    k_itemsets
+    Ok(base)
 }
 
 // holds all the logic for the Apriori algorithm
 fn find_frequent_itemsets(filename: &str, threshold: u32, output: &str) {
-    let mut base_itemsets = match read_itemsets(filename) {
-        Ok(itemsets) => itemsets,
+    let mut base_set = match read_k1_support(filename) {
+        Ok(set) => set,
         Err(err) => {
-            println!("Error reading itemsets from '{}': {}", filename, err);
+            println!("Error reading base itemset from '{}': {}", filename, err);
             process::exit(1);
         }
     };
-    println!("{:5} unique itemsets read", base_itemsets.len());
-    // println!("Base itemsets: {:?}", base_itemsets);
-    let one_itemsets = build_1_itemsets(&base_itemsets, threshold);
-    println!("{:5} 1-itemsets found", one_itemsets.len());
-    let two_itemsets = build_k_itemset(&one_itemsets, &one_itemsets, &mut base_itemsets, threshold);
-    println!("{:5} 2-itemsets found", two_itemsets.len());
-    // for (keywords, count) in &one_itemsets {
-    //     if *count >= threshold {
-    //         println!("{:?} {}", keywords, count);
-    //     }
-    // }
+    println!("{:5} unique itemsets read", base_set.len());
 }
 
 fn main() {
