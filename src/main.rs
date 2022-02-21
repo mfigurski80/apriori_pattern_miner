@@ -5,7 +5,8 @@ mod intersect;
 mod read;
 
 use intersect::IntersectSorted;
-use std::collections::HashMap;
+// use std::collections::HashMap;
+use hashbrown::HashMap;
 use std::env;
 use std::fs::File;
 use std::io::{BufWriter, Error, Write};
