@@ -27,7 +27,7 @@ impl RecursivelyBuildable for PatternSupport {
         k1_support: &PatternSupport,
         min_support: usize,
     ) -> PatternSupport {
-        let mut k_support = Arc::new(Mutex::new(PatternSupport::new())); // TODO: spend some time trying to predict size
+        let k_support = Arc::new(Mutex::new(PatternSupport::new())); // TODO: spend some time trying to predict size
         self.par_iter().for_each(|(prev_pat, prev_sup)| {
             // we have a new pattern to build off of! From last elem value in
             // this one up to keyword_list.len(), check to see what the intersection
@@ -47,7 +47,10 @@ impl RecursivelyBuildable for PatternSupport {
                 }
             }
         });
-        Arc::try_unwrap(k_support).unwrap().into_inner().unwrap()
+        Arc::try_unwrap(k_support)
+            .expect("Failed to de-reference after multi-threading")
+            .into_inner()
+            .expect("Failed to unwrap after multi-threading")
     }
 }
 
