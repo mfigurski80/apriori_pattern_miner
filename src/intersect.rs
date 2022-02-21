@@ -1,3 +1,6 @@
+// THIS CODE IS MY OWN WORK, IT WAS WRITTEN
+// WITHOUT CONSULTING CODE WRITTEN BY OTHER STUDENTS ~ Mikolaj Figurski
+
 pub trait IntersectSorted<T> {
     /// Intersect two sorted sequences
     fn intersect(&mut self, other: &Self);

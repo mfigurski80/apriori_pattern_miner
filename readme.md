@@ -1,3 +1,5 @@
+THIS CODE IS MY OWN WORK, IT WAS WRITTEN WITHOUT CONSULTING CODE WRITTEN BY OTHER STUDENTS ~ Mikolaj Figurski
+
 # Data Mining Homework 2 -- Apriori Pattern Program
 
 ## Installation / Running

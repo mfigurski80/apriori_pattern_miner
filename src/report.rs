@@ -1,3 +1,6 @@
+// THIS CODE IS MY OWN WORK, IT WAS WRITTEN
+// WITHOUT CONSULTING CODE WRITTEN BY OTHER STUDENTS ~ Mikolaj Figurski
+
 use crate::patternsupport;
 
 use patternsupport::{Keywords, PatternSupport};
