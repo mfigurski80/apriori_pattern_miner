@@ -3,6 +3,8 @@ use crate::read;
 
 use hashbrown::HashMap;
 use intersect::IntersectSorted;
+use rayon::prelude::*;
+use std::sync::{Arc, Mutex};
 
 /// Keyword List that stores string at their encodings. Shortens string pointers to u32
 pub type Keywords = Vec<String>;
@@ -25,8 +27,8 @@ impl RecursivelyBuildable for PatternSupport {
         k1_support: &PatternSupport,
         min_support: usize,
     ) -> PatternSupport {
-        let mut k_support = PatternSupport::new(); // TODO: spend some time trying to predict size
-        self.iter().for_each(|(prev_pat, prev_sup)| {
+        let mut k_support = Arc::new(Mutex::new(PatternSupport::new())); // TODO: spend some time trying to predict size
+        self.par_iter().for_each(|(prev_pat, prev_sup)| {
             // we have a new pattern to build off of! From last elem value in
             // this one up to keyword_list.len(), check to see what the intersection
             // of support is (using k1_support) and, if above min, add new pattern to k_support!
@@ -40,11 +42,12 @@ impl RecursivelyBuildable for PatternSupport {
                 new_sup.intersect(&i_support); // custom sorted intersection
                 if new_sup.len() >= min_support {
                     // println!("{} -> {} :: {}", last, keyword_list.len(), i);
-                    k_support.insert(new_pat, new_sup);
+                    // k_support.insert(new_pat, new_sup);
+                    k_support.as_ref().lock().unwrap().insert(new_pat, new_sup);
                 }
             }
         });
-        k_support
+        Arc::try_unwrap(k_support).unwrap().into_inner().unwrap()
     }
 }
 
