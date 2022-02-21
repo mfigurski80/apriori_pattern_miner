@@ -8,25 +8,45 @@ use intersect::IntersectSorted;
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::{BufWriter, Error, Write};
 use std::process;
 
 /// Keyword List that stores string at their encodings. Shortens string pointers to u32
 type Keywords = Vec<String>;
 /// Maps specific pattern to the column ids that support it
 type PatternSupport = HashMap<Vec<u32>, Vec<u32>>;
+/// Stores report to be written to file (and hopefully easily sorted)
+type PatternReport = Vec<(Vec<u32>, u32)>;
 
-fn write_pattern(words: &Keywords, patternSupport: &PatternSupport, writer: &mut BufWriter<File>) {
-    let data = patternSupport
-        .iter()
-        .map(|(pat, sup)| {
-            let pat_str: Vec<String> = pat.iter().map(|i| words[*i as usize].clone()).collect();
-            format!("{} ({})\n", pat_str.join(" "), sup.len())
-        })
-        .collect::<String>();
-    writer
-        .write_all(data.as_bytes())
-        .expect("Failed to write to file");
+trait PatternAppendable {
+    fn append_pattern(&mut self, pattern_support: &PatternSupport);
+}
+
+impl PatternAppendable for PatternReport {
+    fn append_pattern(&mut self, pattern_support: &PatternSupport) {
+        pattern_support.iter().for_each(|(pattern, sup)| {
+            self.push((pattern.clone(), sup.len() as u32));
+        });
+    }
+}
+
+trait Reportable {
+    fn write_report(&self, words: &Keywords, output: &mut BufWriter<File>) -> Result<(), Error>;
+}
+
+impl Reportable for PatternReport {
+    fn write_report(&self, words: &Keywords, output: &mut BufWriter<File>) -> Result<(), Error> {
+        self.iter()
+            .try_for_each(|(pattern, sup)| -> Result<(), Error> {
+                let pat_str: Vec<&str> = pattern
+                    .iter()
+                    .map(|&id| words[id as usize].as_str())
+                    .collect();
+                writeln!(output, "{} ({})", pat_str.join(" "), sup)?;
+                Ok(())
+            })?;
+        Ok(())
+    }
 }
 
 /// Creates Keywords list and k=1 Pattern Support map from keywrod support struct given
@@ -75,9 +95,8 @@ fn read_k_support(
 }
 
 /// holds all the logic for the Apriori algorithm
-fn find_frequent_itemsets(filename: &str, threshold: usize, output: &str) {
-    let mut out = BufWriter::new(File::create(output).expect("Unable to create file"));
-
+fn report_frequent_itemsets(filename: &str, threshold: usize, output: &str) {
+    let mut report = PatternReport::new();
     let (keywords, k1_support) = match read::read_keyword_support(filename, threshold) {
         Ok(set) => parse_keyword_support(set),
         Err(err) => {
@@ -86,7 +105,7 @@ fn find_frequent_itemsets(filename: &str, threshold: usize, output: &str) {
         }
     };
     println!("{:5} passing 1-itemsets found", keywords.len());
-    write_pattern(&keywords, &k1_support, &mut out);
+    report.append_pattern(&k1_support);
 
     let mut k_support: PatternSupport = k1_support.clone(); // TODO: find a better way to do this
     let mut k = 2;
@@ -95,10 +114,16 @@ fn find_frequent_itemsets(filename: &str, threshold: usize, output: &str) {
         println!("{:5} passing {}-itemsets found", k_support.len(), k,);
         // println!("\tEx: {:?}", k_support.get(&vec![0, 1]).unwrap());
         k += 1;
+        report.append_pattern(&k_support);
     }
+
+    // report.sort_by_key(|k| k.1);
+    report.sort_by(|a, b| a.1.cmp(&b.1).reverse());
+    let mut out = BufWriter::new(File::create(output).expect("Unable to create file"));
+    report
+        .write_report(&keywords, &mut out)
+        .expect("Failed to write to file");
     out.flush().expect("Failed to flush buffer to file");
-    // let k2_support = read_k_support(&keywords, &k1_support, &k1_support, threshold);
-    // println!("{:5} passing 2-itemsets found", k2_support.len());
 }
 
 fn main() {
@@ -116,5 +141,5 @@ fn main() {
     let output = &args[3];
     // println!("All above {}: '{}' -> '{}' ", threshold, filename, output);
 
-    find_frequent_itemsets(filename, threshold as usize, output);
+    report_frequent_itemsets(filename, threshold as usize, output);
 }
