@@ -19,7 +19,7 @@
 use std::env;
 use std::process;
 
-use mining_hw2::*;
+use mining_hw2;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -36,5 +36,5 @@ fn main() {
     let output = &args[3];
     // println!("All above {}: '{}' -> '{}' ", threshold, filename, output);
 
-    report_frequent_itemsets(filename, threshold as usize, output);
+    mining_hw2::report_frequent_itemsets(filename, threshold as usize, output);
 }
