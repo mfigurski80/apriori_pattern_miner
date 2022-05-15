@@ -28,7 +28,7 @@ pub fn report_frequent_itemsets(filename: &str, threshold: usize, output: &str) 
     let mut k_support: PatternSupport = k1_support.clone(); // TODO: find a better way to do this
     let mut k = 2;
     while k_support.len() > 0 {
-        k_support = k_support.better_build_next(&keywords, &k1_support, threshold);
+        k_support = k_support.build_next(&keywords, &k1_support, threshold);
         println!("{:5} passing {}-itemsets found", k_support.len(), k,);
         k += 1;
         report.append_pattern(&k_support);
