@@ -10,3 +10,8 @@ fn bench_smol(b: &mut Bencher) {
     // report_frequent_itemsets("data/smol.csv", 40, "out.csv");
     // b.iter(|| vec![1, 2, 3].clone())
 }
+
+#[bench]
+fn bench_chungus(b: &mut Bencher) {
+    b.iter(|| report_frequent_itemsets("data/smol.csv", 4, "/dev/null"))
+}
