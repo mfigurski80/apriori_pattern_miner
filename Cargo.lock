@@ -14,6 +14,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "apriori_pattern_miner"
+version = "0.1.1"
+dependencies = [
+ "csv",
+ "hashbrown",
+ "rayon",
+ "serde",
+ "serde_derive",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -170,17 +181,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5aa361d4faea93603064a027415f07bd8e1d5c88c9fbf68bf56a285428fd79ce"
 dependencies = [
  "autocfg",
-]
-
-[[package]]
-name = "mining_hw2"
-version = "0.1.0"
-dependencies = [
- "csv",
- "hashbrown",
- "rayon",
- "serde",
- "serde_derive",
 ]
 
 [[package]]
