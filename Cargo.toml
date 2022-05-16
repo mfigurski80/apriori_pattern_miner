@@ -1,8 +1,20 @@
 [package]
-name = "mining_hw2"
-version = "0.1.0"
+name = "apriori_pattern_miner"
+version = "0.1.1"
+authors = ["Mikolaj Figurski <miko.f80@gmail.com>"]
+description = "Implementation of Apriori Pattern Mining algorithm"
+homepage = "https://github.com/mfigurski80/apriori_pattern_miner"
+repository = "https://github.com/mfigurski80/apriori_pattern_miner"
+license = "MIT OR Apache-2.0"
+keywords = ["apriori","pattern","mining","rayon"]
+categories = ["text-processing", "algorithms", "command-line-utilities", "science"]
 edition = "2021"
-
+exclude=[
+	"data/*",
+	"*.pdf",
+	"test_on_lab.sh",
+]
+	
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
